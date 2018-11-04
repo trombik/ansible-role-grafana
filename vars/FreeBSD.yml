@@ -1,2 +1,9 @@
+__grafana_user: grafana
+__grafana_group: grafana
+__grafana_log_dir: /var/log/grafana
 __grafana_db_dir: /var/db/grafana
-__grafana_conf_dir: /usr/local/etc/grafana
+__grafana_plugins_dir: /var/db/grafana/plugins
+__grafana_provisioning_dir: /var/db/grafana/provisioning
+__grafana_service: grafana
+__grafana_conf_dir: /usr/local/etc
+__grafana_package: www/grafana5
