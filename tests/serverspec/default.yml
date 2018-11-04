@@ -14,6 +14,11 @@
       - "deb https://packagecloud.io/grafana/stable/{{ ansible_os_family | lower }}/ stretch main"
     grafana_extra_packages:
       - name: zsh
+    grafana_plugins:
+      - name: raintank-worldping-app
+        state: present
+      - name: grafana-clock-panel
+        state: absent
     flags:
       FreeBSD: |
         grafana_conf="{{ grafana_conf_file }}"

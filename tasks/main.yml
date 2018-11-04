@@ -49,6 +49,23 @@
     group: "{{ grafana_group }}"
   notify: Restart grafana
 
+- name: Install plug-ins
+  command: "grafana-cli --pluginsDir {{ grafana_plugins_dir }} plugins install {{ item }}"
+  args:
+    creates: "{{ grafana_plugins_dir }}/{{ item }}"
+  with_items: "{{ grafana_plugins | selectattr('state', 'equalto', 'present') | map(attribute='name') | list }}"
+  register: __register_plugin_install
+  until: __register_plugin_install is succeeded
+  retries: 5
+  notify: Restart grafana
+
+- name: Remove plug-ins
+  command: "grafana-cli --pluginsDir {{ grafana_plugins_dir }} plugins uninstall {{ item }}"
+  args:
+    removes: "{{ grafana_plugins_dir }}/{{ item }}"
+  with_items: "{{ grafana_plugins | selectattr('state', 'equalto', 'absent') | map(attribute='name') | list }}"
+  notify: Restart grafana
+
 - name: Start grafana
   service:
     name: "{{ grafana_service }}"

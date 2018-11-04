@@ -10,4 +10,5 @@ grafana_provisioning_dir: "{{ grafana_conf_dir }}/provisioning"
 grafana_package: "{{ __grafana_package }}"
 grafana_extra_packages: []
 grafana_flags: ""
+grafana_plugins: []
 grafana_config: ""
