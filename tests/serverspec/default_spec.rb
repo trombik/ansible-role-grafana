@@ -12,6 +12,8 @@ db_dir  = "/var/lib/grafana"
 default_user = "root"
 default_group = "root"
 extra_packages = %w[zsh]
+plugins = %w[raintank-worldping-app]
+plugins_absent = %w[grafana-clock-panel]
 
 case os[:family]
 when "freebsd"
@@ -23,6 +25,7 @@ when "freebsd"
 end
 config = "#{config_dir}/grafana.ini"
 provisioning_dir = "#{config_dir}/provisioning"
+plugins_dir = "#{db_dir}/plugins"
 
 describe package(package) do
   it { should be_installed }
@@ -72,12 +75,36 @@ describe file(db_dir) do
   it { should be_grouped_into group }
 end
 
-describe file "#{db_dir}/plugins" do
+describe file plugins_dir do
   it { should exist }
   it { should be_directory }
   it { should be_mode 755 }
   it { should be_owned_by user }
   it { should be_grouped_into group }
+end
+
+plugins.each do |p|
+  describe file "#{plugins_dir}/#{p}" do
+    it { should exist }
+    it { should be_directory }
+    it { should be_mode 755 }
+    it { should be_owned_by default_user }
+    it { should be_grouped_into os[:family] == "freebsd" ? group : default_group }
+  end
+end
+
+plugins_absent.each do |p|
+  describe file "#{plugins_dir}/#{p}" do
+    it { should_not exist }
+  end
+end
+
+describe command "grafana-cli --pluginsDir #{plugins_dir} plugins ls" do
+  its(:exit_status) { should eq 0 }
+  its(:stderr) { should eq "" }
+  plugins.each do |p|
+    its(:stdout) { should match(/^#{p}\s+@\s+\d+\.\d+\.\d+\s*$/) }
+  end
 end
 
 describe file provisioning_dir do
