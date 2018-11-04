@@ -2,7 +2,7 @@ require "spec_helper"
 require "serverspec"
 
 package = "grafana"
-service = "grafana"
+service = "grafana-server"
 config_dir = "/etc/grafana"
 user    = "grafana"
 group   = "grafana"
@@ -15,12 +15,14 @@ extra_packages = %w[zsh]
 
 case os[:family]
 when "freebsd"
+  service = "grafana"
   package = "www/grafana5"
   config_dir = "/usr/local/etc"
   db_dir = "/var/db/grafana"
   default_group = "wheel"
 end
-config = "#{config_dir}/grafana.conf"
+config = "#{config_dir}/grafana.ini"
+provisioning_dir = "#{config_dir}/provisioning"
 
 describe package(package) do
   it { should be_installed }
@@ -36,8 +38,8 @@ describe file(config) do
   it { should exist }
   it { should be_file }
   it { should be_owned_by default_user }
-  it { should be_grouped_into default_group }
-  it { should be_mode 644 }
+  it { should be_grouped_into group }
+  it { should be_mode 640 }
   its(:content) { should match(/^# Managed by ansible$/) }
   its(:content) { should match(/^logs = #{log_dir}$/) }
 end
@@ -55,7 +57,10 @@ describe file "#{log_dir}/grafana.log" do
   it { should be_file }
   it { should be_owned_by user }
   it { should be_grouped_into group }
-  it { should be_mode 644 }
+  it do
+    pending "cannot find where the file mode is defined" if os[:family] == "freebsd"
+    should be_mode 640
+  end
   its(:content) { should match(/msg="HTTP Server Listen"/) }
 end
 
@@ -67,14 +72,20 @@ describe file(db_dir) do
   it { should be_grouped_into group }
 end
 
-%w[plugins provisioning].each do |d|
-  describe file "#{db_dir}/#{d}" do
-    it { should exist }
-    it { should be_directory }
-    it { should be_mode 755 }
-    it { should be_owned_by default_user }
-    it { should be_grouped_into default_group }
-  end
+describe file "#{db_dir}/plugins" do
+  it { should exist }
+  it { should be_directory }
+  it { should be_mode 755 }
+  it { should be_owned_by user }
+  it { should be_grouped_into group }
+end
+
+describe file provisioning_dir do
+  it { should exist }
+  it { should be_directory }
+  it { should be_mode 755 }
+  it { should be_owned_by default_user }
+  it { should be_grouped_into group }
 end
 
 case os[:family]
