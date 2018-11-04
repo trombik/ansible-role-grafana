@@ -27,6 +27,8 @@
   file:
     path: "{{ grafana_provisioning_dir }}"
     mode: 0755
+    owner: root
+    group: "{{ grafana_group }}"
     state: directory
   notify: Restart grafana
 
@@ -34,6 +36,8 @@
   file:
     path: "{{ grafana_plugins_dir }}"
     mode: 0755
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
     state: directory
   notify: Restart grafana
 
@@ -41,6 +45,8 @@
   template:
     src: grafana.conf.j2
     dest: "{{ grafana_conf_file }}"
+    mode: 0640
+    group: "{{ grafana_group }}"
   notify: Restart grafana
 
 - name: Start grafana
