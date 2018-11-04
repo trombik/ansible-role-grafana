@@ -1,0 +1,2 @@
+__grafana_db_dir: /var/db/grafana
+__grafana_conf_dir: /usr/local/etc/grafana

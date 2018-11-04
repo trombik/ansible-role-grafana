@@ -1,0 +1,8 @@
+grafana_user: grafana
+grafana_group: grafana
+grafana_log_dir: /var/log/grafana
+grafana_db_dir: "{{ __grafana_db_dir }}"
+grafana_service: grafana
+grafana_conf_dir: "{{ __grafana_conf_dir }}"
+grafana_conf_file: "{{ __grafana_conf_dir }}/grafana.conf"
+grafana_flags: ""

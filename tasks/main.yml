@@ -1,0 +1,37 @@
+---
+# tasks file for ansible-role-grafana
+
+- include_vars: "{{ ansible_os_family }}.yml"
+
+- include: "install-{{ ansible_os_family }}.yml"
+
+- name: Create log directory
+  file:
+    path: "{{ grafana_log_dir }}"
+    mode: 0755
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    state: directory
+  notify: Restart grafana
+
+- name: Create db directory
+  file:
+    path: "{{ grafana_db_dir }}"
+    mode: 0755
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    state: directory
+  notify: Restart grafana
+
+- name: Create grafana.conf
+  template:
+    src: grafana.conf.j2
+    dest: "{{ grafana_conf_file }}"
+    validate: echo %s
+  notify: Restart grafana
+
+- name: Start grafana
+  service:
+    name: "{{ grafana_service }}"
+    enabled: true
+    state: started

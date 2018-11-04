@@ -1,0 +1,5 @@
+- hosts: localhost
+  roles:
+    - ansible-role-grafana
+  vars:
+    grafana_config: ""

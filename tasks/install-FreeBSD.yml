@@ -1,0 +1,6 @@
+---
+
+- name: Install grafana
+  pkgng:
+    name: grafana
+    state: present
