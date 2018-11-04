@@ -24,6 +24,9 @@
         grafana_conf="{{ grafana_conf_file }}"
 
     grafana_flags: "{{ flags[ansible_os_family] }}"
+    grafana_admin_user: admin
+    grafana_admin_password: PassWord
+    grafana_addr: "{{ ansible_default_ipv4['address'] }}"
     grafana_config: |
       [paths]
       data = {{ grafana_db_dir }}
@@ -37,6 +40,9 @@
       [dataproxy]
       [analytics]
       [security]
+      admin_user = {{ grafana_admin_user }}
+      admin_password = {{ grafana_admin_password }}
+      disable_gravatar = true
       [snapshots]
       [dashboards]
       [users]
