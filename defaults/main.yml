@@ -1,8 +1,13 @@
-grafana_user: grafana
-grafana_group: grafana
-grafana_log_dir: /var/log/grafana
+grafana_user: "{{ __grafana_user }}"
+grafana_group: "{{ __grafana_group }}"
+grafana_log_dir: "{{ __grafana_log_dir }}"
 grafana_db_dir: "{{ __grafana_db_dir }}"
-grafana_service: grafana
+grafana_plugins_dir: "{{ __grafana_plugins_dir }}"
+grafana_provisioning_dir: "{{ __grafana_provisioning_dir }}"
+grafana_service: "{{ __grafana_service }}"
 grafana_conf_dir: "{{ __grafana_conf_dir }}"
-grafana_conf_file: "{{ __grafana_conf_dir }}/grafana.conf"
+grafana_conf_file: "{{ grafana_conf_dir }}/grafana.conf"
+grafana_package: "{{ __grafana_package }}"
+grafana_extra_packages: []
 grafana_flags: ""
+grafana_config: ""

@@ -23,11 +23,24 @@
     state: directory
   notify: Restart grafana
 
+- name: Create grafana_provisioning_dir
+  file:
+    path: "{{ grafana_provisioning_dir }}"
+    mode: 0755
+    state: directory
+  notify: Restart grafana
+
+- name: Create grafana_plugins_dir
+  file:
+    path: "{{ grafana_plugins_dir }}"
+    mode: 0755
+    state: directory
+  notify: Restart grafana
+
 - name: Create grafana.conf
   template:
     src: grafana.conf.j2
     dest: "{{ grafana_conf_file }}"
-    validate: echo %s
   notify: Restart grafana
 
 - name: Start grafana

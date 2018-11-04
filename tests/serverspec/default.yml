@@ -2,4 +2,52 @@
   roles:
     - ansible-role-grafana
   vars:
-    grafana_config: ""
+    grafana_extra_packages:
+      - name: zsh
+    flags:
+      FreeBSD: |
+        grafana_conf="{{ grafana_conf_file }}"
+
+    grafana_flags: "{{ flags[ansible_os_family] }}"
+    grafana_config: |
+      [paths]
+      data = {{ grafana_db_dir }}
+      logs = {{ grafana_log_dir }}
+      plugins = /var/db/grafana/plugins
+      provisioning = {{ grafana_provisioning_dir }}
+      [server]
+      [database]
+      log_queries =
+      [session]
+      [dataproxy]
+      [analytics]
+      [security]
+      [snapshots]
+      [dashboards]
+      [users]
+      [auth]
+      [auth.anonymous]
+      [auth.github]
+      [auth.google]
+      [auth.generic_oauth]
+      [auth.grafana_com]
+      [auth.proxy]
+      [auth.basic]
+      [auth.ldap]
+      [smtp]
+      [emails]
+      [log]
+      [log.console]
+      [log.file]
+      [log.syslog]
+      [alerting]
+      [metrics]
+      [metrics.graphite]
+      [tracing.jaeger]
+      [grafana_com]
+      [external_image_storage]
+      [external_image_storage.s3]
+      [external_image_storage.webdav]
+      [external_image_storage.gcs]
+      [external_image_storage.azure_blob]
+      [external_image_storage.local]
