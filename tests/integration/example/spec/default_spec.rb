@@ -1,22 +1,18 @@
 require "spec_helper"
+require "net/http"
 
 class ServiceNotReady < StandardError
 end
 
 sleep 10 if ENV["JENKINS_HOME"]
-
-context "after provisioning finished" do
-  describe server(:client1) do
-    it "should be able to ping server" do
-      result = current_server.ssh_exec("ping -c 1 #{server(:server1).server.address} && echo OK")
-      expect(result).to match(/OK/)
+describe server(:server1) do
+  it "responds to /api/admin/settings with 200" do
+    uri = URI("http://#{server(:server1).server.address}:3000/api/admin/settings")
+    req = Net::HTTP::Get.new(uri)
+    req.basic_auth "admin", "PassWord"
+    res = Net::HTTP.start(uri.hostname, uri.port) do |http|
+      http.request(req)
     end
-  end
-
-  describe server(:server1) do
-    it "should be able to ping client" do
-      result = current_server.ssh_exec("ping -c 1 #{server(:client1).server.address} && echo OK")
-      expect(result).to match(/OK/)
-    end
+    expect(res.code.to_i).to eq 200
   end
 end
