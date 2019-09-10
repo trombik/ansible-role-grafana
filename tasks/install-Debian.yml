@@ -10,10 +10,3 @@
     name: "{{ item.name }}"
     state: "{{ item.state | default(omit) }}"
   with_items: "{{ grafana_extra_packages }}"
-
-#- name: Create /etc/rc.conf.d/grafana
-#  template:
-#    src: FreeBSD.subr.j2
-#    dest: "/etc/rc.conf.d/{{ grafana_service }}"
-#    validate: sh -n %s
-#  notify: Restart grafana
