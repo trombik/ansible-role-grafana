@@ -18,7 +18,7 @@ plugins_absent = %w[grafana-clock-panel]
 case os[:family]
 when "freebsd"
   service = "grafana"
-  package = "www/grafana5"
+  package = "www/grafana6"
   config_dir = "/usr/local/etc"
   db_dir = "/var/db/grafana"
   default_group = "wheel"
