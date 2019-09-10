@@ -21,7 +21,7 @@ provisioner:
     - filter_plugins
 
 platforms:
-  - name: freebsd-11.2-amd64
+  - name: freebsd-12.0-amd64
     driver:
       box: trombik/ansible-freebsd-11.2-amd64
       box_check_update: false

@@ -5,13 +5,10 @@
     - ansible-role-grafana
   vars:
     apt_repo_keys_to_add:
-      - https://packagecloud.io/gpg.key
+      - https://packages.grafana.com/gpg.key
     apt_repo_enable_apt_transport_https: yes
     apt_repo_to_add:
-      # https://packagecloud.io/install/repositories/grafana/stable/config_file.list?os=ubuntu&dist=bionic&source=script
-      # XXX use `stretch` here because the repository does not support Ubuntu
-      # code name.
-      - "deb https://packagecloud.io/grafana/stable/{{ ansible_os_family | lower }}/ stretch main"
+      - "deb https://packages.grafana.com/oss/deb stable main"
     grafana_extra_packages:
       - name: zsh
     grafana_plugins:
