@@ -1,6 +1,6 @@
-# ansible-role-grafana
+# `trombik.grafana`
 
-A brief description of the role goes here.
+Install `grafana`.
 
 # Requirements
 
@@ -8,9 +8,48 @@ None
 
 # Role Variables
 
-| variable | description | default |
+| Variable | Description | Default |
 |----------|-------------|---------|
+| `grafana_user` | user of `grafana` | `{{ __grafana_user }}` |
+| `grafana_group` | group of `grafana` | `{{ __grafana_group }}` |
+| `grafana_log_dir` | path to log directory | `{{ __grafana_log_dir }}` |
+| `grafana_db_dir` | path to database directory | `{{ __grafana_db_dir }}` |
+| `grafana_plugins_dir` | path to plug-in directory | `{{ grafana_db_dir }}/plugins` |
+| `grafana_service` | service name of `grafana` | `{{ __grafana_service }}` |
+| `grafana_conf_dir` | path to configuration directory | `{{ __grafana_conf_dir }}` |
+| `grafana_conf_file` | path to configuration file | `{{ grafana_conf_dir }}/grafana.ini` |
+| `grafana_provisioning_dir` | path to provisioning directory | `{{ grafana_conf_dir }}/provisioning` |
+| `grafana_package` | package name of `grafana` | `{{ __grafana_package }}` |
+| `grafana_extra_packages` | extra packages to install | `[]` |
+| `grafana_flags` | | `""` |
+| `grafana_plugins` | list of plug-ins to install | `[]` |
+| `grafana_admin_user` | administration user name | `""` |
+| `grafana_admin_password` | administration user's password | `""` |
+| `grafana_config` | content of `grafana.ini` | `""` |
 
+## Debian
+
+| Variable | Default |
+|----------|---------|
+| `__grafana_user` | `grafana` |
+| `__grafana_group` | `grafana` |
+| `__grafana_log_dir` | `/var/log/grafana` |
+| `__grafana_db_dir` | `/var/lib/grafana` |
+| `__grafana_service` | `grafana-server` |
+| `__grafana_conf_dir` | `/etc/grafana` |
+| `__grafana_package` | `grafana` |
+
+## FreeBSD
+
+| Variable | Default |
+|----------|---------|
+| `__grafana_user` | `grafana` |
+| `__grafana_group` | `grafana` |
+| `__grafana_log_dir` | `/var/log/grafana` |
+| `__grafana_db_dir` | `/var/db/grafana` |
+| `__grafana_service` | `grafana` |
+| `__grafana_conf_dir` | `/usr/local/etc` |
+| `__grafana_package` | `www/grafana5` |
 
 # Dependencies
 
@@ -19,6 +58,78 @@ None
 # Example Playbook
 
 ```yaml
+---
+- hosts: localhost
+  roles:
+    - name: trombik.apt_repo
+      when: ansible_os_family == 'Debian'
+    - ansible-role-grafana
+  vars:
+    apt_repo_keys_to_add:
+      - https://packages.grafana.com/gpg.key
+    apt_repo_enable_apt_transport_https: yes
+    apt_repo_to_add:
+      - "deb https://packages.grafana.com/oss/deb stable main"
+    grafana_extra_packages:
+      - name: zsh
+    grafana_plugins:
+      - name: raintank-worldping-app
+        state: present
+      - name: grafana-clock-panel
+        state: absent
+    flags:
+      FreeBSD: |
+        grafana_conf="{{ grafana_conf_file }}"
+
+    grafana_flags: "{{ flags[ansible_os_family] }}"
+    grafana_admin_user: admin
+    grafana_admin_password: PassWord
+    grafana_addr: "{{ ansible_default_ipv4['address'] }}"
+    grafana_config: |
+      [paths]
+      data = {{ grafana_db_dir }}
+      logs = {{ grafana_log_dir }}
+      plugins = /var/db/grafana/plugins
+      provisioning = {{ grafana_provisioning_dir }}
+      [server]
+      [database]
+      log_queries =
+      [session]
+      [dataproxy]
+      [analytics]
+      [security]
+      admin_user = {{ grafana_admin_user }}
+      admin_password = {{ grafana_admin_password }}
+      disable_gravatar = true
+      [snapshots]
+      [dashboards]
+      [users]
+      [auth]
+      [auth.anonymous]
+      [auth.github]
+      [auth.google]
+      [auth.generic_oauth]
+      [auth.grafana_com]
+      [auth.proxy]
+      [auth.basic]
+      [auth.ldap]
+      [smtp]
+      [emails]
+      [log]
+      [log.console]
+      [log.file]
+      [log.syslog]
+      [alerting]
+      [metrics]
+      [metrics.graphite]
+      [tracing.jaeger]
+      [grafana_com]
+      [external_image_storage]
+      [external_image_storage.s3]
+      [external_image_storage.webdav]
+      [external_image_storage.gcs]
+      [external_image_storage.azure_blob]
+      [external_image_storage.local]
 ```
 
 # License
