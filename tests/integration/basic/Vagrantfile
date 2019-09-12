@@ -44,27 +44,10 @@ http_proxy = proxy_running? ? http_proxy_url : ""
 Vagrant.configure("2") do |config|
   config.ssh.shell = "/bin/sh"
   config.vm.provider "virtualbox" do |v|
-    v.memory = 256
+    v.memory = 1024
     v.cpus = 1
   end
-  config.vm.box = "trombik/ansible-freebsd-11.2-amd64"
-
-  config.vm.define "client1" do |c|
-    c.vm.network "private_network", ip: "192.168.21.100"
-    c.vm.hostname = "client1.virtualbox.reallyenglish.com"
-    c.vm.provision :ansible do |ansible|
-      ansible.limit = "192.168.21.100"
-      ansible.playbook = "site.yml"
-      ansible.extra_vars = {
-        ansible_python_interpreter: "/usr/local/bin/python",
-        http_proxy: http_proxy,
-        https_proxy: http_proxy,
-        no_proxy: "localhost,127.0.0.1,.example.com"
-      }
-      ansible.inventory_path = "inventories/staging"
-      ansible.verbose = "v"
-    end
-  end
+  config.vm.box = "trombik/ansible-freebsd-12.0-amd64"
 
   config.vm.define "server1" do |c|
     c.vm.network "private_network", ip: "192.168.21.200"
