@@ -49,6 +49,36 @@
     group: "{{ grafana_group }}"
   notify: Restart grafana
 
+- name: Create directories for grafana_provisioning_files
+  file:
+    path: "{{ grafana_provisioning_dir }}/{{ item.name | dirname }}"
+    mode: 0755
+    state: directory
+    group: "{{ grafana_group }}"
+  with_items: "{{ grafana_provisioning_files }}"
+  when:
+    - "not 'state' in item or ('state' in item and item.state == 'present')"
+
+- name: Create grafana_provisioning_files
+  template:
+    src: provisioning.yml.j2
+    dest: "{{ grafana_provisioning_dir }}/{{ item.name }}"
+    mode: 0640
+    group: "{{ grafana_group }}"
+  notify: Restart grafana
+  with_items: "{{ grafana_provisioning_files }}"
+  when:
+    - "not 'state' in item or ('state' in item and item.state == 'present')"
+
+- name: Delete grafana_provisioning_files
+  file:
+    path: "{{ grafana_provisioning_dir }}/{{ item.name }}"
+    state: absent
+  notify: Restart grafana
+  with_items: "{{ grafana_provisioning_files }}"
+  when:
+    - "'state' in item and item.state == 'absent'"
+
 - name: Install plug-ins
   command: "grafana-cli --pluginsDir {{ grafana_plugins_dir }} plugins install {{ item }}"
   args:

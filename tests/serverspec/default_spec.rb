@@ -14,6 +14,9 @@ default_group = "root"
 extra_packages = %w[zsh]
 plugins = %w[raintank-worldping-app]
 plugins_absent = %w[grafana-clock-panel]
+provisioning_files = [
+  { name: "datasources/influxdb.yml", regex: /datasources:\n\s+-\s+name: InfluxDB/ }
+]
 
 case os[:family]
 when "freebsd"
@@ -45,6 +48,30 @@ describe file(config) do
   it { should be_mode 640 }
   its(:content) { should match(/^# Managed by ansible$/) }
   its(:content) { should match(/^logs = #{log_dir}$/) }
+end
+
+provisioning_files.each do |f|
+  describe file(File.dirname("#{provisioning_dir}/#{f[:name]}")) do
+    it { should exist }
+    it { should be_directory }
+    it { should be_mode 755 }
+    it { should be_owned_by default_user }
+    it { should be_grouped_into group }
+  end
+
+  describe file("#{provisioning_dir}/#{f[:name]}") do
+    it { should exist }
+    it { should be_file }
+    it { should be_owned_by default_user }
+    it { should be_grouped_into group }
+    it { should be_mode 640 }
+    its(:content) { should match(/^# Managed by ansible$/) }
+    its(:content) { should match(f[:regex]) }
+  end
+end
+
+describe file "#{provisioning_dir}/datasources/foo.yml" do
+  it { should_not exist }
 end
 
 describe file(log_dir) do
