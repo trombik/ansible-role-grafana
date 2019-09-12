@@ -26,6 +26,41 @@ None
 | `grafana_admin_user` | administration user name | `""` |
 | `grafana_admin_password` | administration user's password | `""` |
 | `grafana_config` | content of `grafana.ini` | `""` |
+| `grafana_provisioning_files` | see below | `[]` |
+
+## `grafana_provisioning_files`
+
+This variable manages files under `grafana_provisioning_dir` (see
+[Provisioning Grafana](https://grafana.com/docs/administration/provisioning/)
+for details. It is a list of dict, whose keys and values are described below.
+
+| Key name  | Value                                                                  | Mandatory? |
+|-----------|------------------------------------------------------------------------|------------|
+| `name`    | relative path to the provisioning file from `grafana_provisioning_dir` | Yes        |
+| `state`   | either `present` or `absent`                                           | No         |
+| `content` | the content of the provisioning file                                   | No         |
+
+An example:
+
+```
+grafana_provisioning_files:
+  - name: datasources/influxdb.yml
+    state: present
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: InfluxDB
+          type: influxdb
+          access: proxy
+          database: mydatabase
+          user: read
+          password: read
+          url: http://localhost:8086
+          jsonData:
+            httpMode: GET
+  - name: datasources/foo.yml
+    state: absent
+```
 
 ## Debian
 
@@ -85,6 +120,23 @@ None
     grafana_admin_user: admin
     grafana_admin_password: PassWord
     grafana_addr: "{{ ansible_default_ipv4['address'] }}"
+    grafana_provisioning_files:
+      - name: datasources/influxdb.yml
+        state: present
+        content: |
+          apiVersion: 1
+          datasources:
+            - name: InfluxDB
+              type: influxdb
+              access: proxy
+              database: mydatabase
+              user: read
+              password: read
+              url: http://localhost:8086
+              jsonData:
+                httpMode: GET
+      - name: datasources/foo.yml
+        state: absent
     grafana_config: |
       [paths]
       data = {{ grafana_db_dir }}

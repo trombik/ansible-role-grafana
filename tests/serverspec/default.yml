@@ -25,6 +25,21 @@
     grafana_admin_user: admin
     grafana_admin_password: PassWord
     grafana_addr: "{{ ansible_default_ipv4['address'] }}"
+    grafana_provisioning_files:
+      - name: datasources/influxdb.yml
+        state: present
+        content: |
+          apiVersion: 1
+          datasources:
+            - name: InfluxDB
+              type: influxdb
+              access: proxy
+              database: mydatabase
+              user: read
+              password: read
+              url: http://localhost:8086
+              jsonData:
+                httpMode: GET
     grafana_config: |
       [paths]
       data = {{ grafana_db_dir }}
