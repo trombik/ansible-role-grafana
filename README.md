@@ -135,8 +135,6 @@ None
               url: http://localhost:8086
               jsonData:
                 httpMode: GET
-      - name: datasources/foo.yml
-        state: absent
     grafana_config: |
       [paths]
       data = {{ grafana_db_dir }}
