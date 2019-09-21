@@ -12,6 +12,7 @@
     - role: trombik.apt_repo
     - role: trombik.java
     - role: trombik.influxdb
+    - role: trombik.telegraf
     - role: ansible-role-grafana
   vars:
     apt_repo_keys_to_add:
@@ -177,20 +178,16 @@
         grants:
           - database: mydatabase
             privilege: ALL
-      - user_name: write
-        user_password: write
+      - user_name: write_only
+        user_password: write_only
         grants:
           - database: mydatabase
             privilege: WRITE
-      - user_name: read
-        user_password: read
+      - user_name: read_only
+        user_password: read_only
         grants:
           - database: mydatabase
             privilege: READ
-      - user_name: none
-        user_password: none
-      - user_name: bar
-        state: absent
     influxdb_config: |
       reporting-disabled = true
       # this one is bind address for backup process
@@ -200,6 +197,8 @@
       [data]
         dir = "{{ influxdb_db_dir }}/data"
         wal-dir = "{{ influxdb_db_dir }}/wal"
+        query-log-enabled = true
+
       [coordinator]
       [retention]
       [shard-precreation]
@@ -210,6 +209,8 @@
         https-enabled = true
         https-certificate = "{{ tls_cert_path }}"
         https-private-key = "{{ tls_key_path }}"
+        log-enabled = true
+        access-log-path = "{{ influxdb_log_dir }}/access.log"
       [ifql]
       [logging]
       [subscriber]
@@ -228,3 +229,48 @@
                   "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
                   "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
       ]
+    telegraf_config: |
+      [global_tags]
+      [agent]
+        interval = "10s"
+        round_interval = true
+        metric_batch_size = 1000
+        metric_buffer_limit = 10000
+        collection_jitter = "0s"
+        flush_interval = "10s"
+        flush_jitter = "0s"
+        precision = ""
+        debug = false
+        quiet = false
+        logfile = "{{ telegraf_log_dir }}/telegraf.log"
+        hostname = "{{ ansible_hostname }}"
+        omit_hostname = false
+      [[inputs.cpu]]
+        percpu = true
+        totalcpu = true
+        collect_cpu_time = false
+        report_active = false
+      [[inputs.disk]]
+        ignore_fs = ["tmpfs", "devtmpfs", "devfs", "overlay", "aufs", "squashfs"]
+      [[inputs.diskio]]
+      [[inputs.kernel]]
+      [[inputs.mem]]
+      [[inputs.processes]]
+      [[inputs.socket_listener]]
+        service_address = "tcp://127.0.0.1:8094"
+        data_format = "influx"
+      [[inputs.influxdb]]
+        urls = [
+          "https://localhost:8086/debug/vars"
+        ]
+        insecure_skip_verify = true
+      # broken at the moment. https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=240570
+      #[[inputs.swap]]
+      [[inputs.system]]
+      [[outputs.influxdb]]
+        urls = ["https://127.0.0.1:8086"]
+        database = "mydatabase"
+        username = "write_only"
+        password = "write_only"
+        skip_database_creation = true
+        insecure_skip_verify = true
