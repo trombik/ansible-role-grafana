@@ -15,4 +15,10 @@ describe server(:server1) do
     end
     expect(res.code.to_i).to eq 200
   end
+
+  it "shows series" do
+    cmd = "influx -username read_only -password read_only -ssl -unsafeSsl -database mydatabase --execute show series"
+    r = server(:server1).server.ssh_exec cmd
+    expect(r).to match(/cpu/)
+  end
 end

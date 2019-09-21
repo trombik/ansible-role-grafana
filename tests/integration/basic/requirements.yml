@@ -4,3 +4,4 @@
 - name: trombik.x509_certificate
 - name: trombik.influxdb
 - name: trombik.java
+- name: trombik.telegraf
