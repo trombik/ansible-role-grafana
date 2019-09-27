@@ -61,7 +61,7 @@
 
 - name: Create grafana_provisioning_files
   template:
-    src: provisioning.yml.j2
+    src: "{% if 'format' in item and item['format'] == 'yaml' %}provisioning.yml.j2{% else %}provisioning.raw.j2{% endif %}"
     dest: "{{ grafana_provisioning_dir }}/{{ item.name }}"
     mode: 0640
     group: "{{ grafana_group }}"

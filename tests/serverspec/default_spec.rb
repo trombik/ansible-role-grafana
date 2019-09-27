@@ -15,7 +15,11 @@ extra_packages = %w[zsh]
 plugins = %w[raintank-worldping-app]
 plugins_absent = %w[grafana-clock-panel]
 provisioning_files = [
-  { name: "datasources/influxdb.yml", regex: /datasources:\n\s+-\s+name: InfluxDB/ }
+  { name: "datasources/influxdb.yml", regex: /datasources:\n-\s+access: proxy/ },
+  { name: "datasources/influxdb.yml", regex: /Managed by ansible/ },
+  { name: "provisioning/dashboards/default.yml", regex: /Managed by ansible/ },
+  { name: "provisioning/dashboards/default.yml", regex: /name: a unique provider name/ },
+  { name: "provisioning/dashboards/json/empty.js", regex: /{}/ }
 ]
 
 case os[:family]
@@ -65,7 +69,6 @@ provisioning_files.each do |f|
     it { should be_owned_by default_user }
     it { should be_grouped_into group }
     it { should be_mode 640 }
-    its(:content) { should match(/^# Managed by ansible$/) }
     its(:content) { should match(f[:regex]) }
   end
 end
@@ -152,7 +155,7 @@ when "freebsd"
     it { should be_grouped_into default_group }
     it { should be_mode 644 }
     its(:content) { should match(/^# Managed by ansible$/) }
-    its(:content) { should match(/^grafana_conf="#{config}"$/) }
+    its(:content) { should match(/^grafana_conf=#{config}$/) }
   end
 end
 

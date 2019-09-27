@@ -39,6 +39,7 @@ for details. It is a list of dict, whose keys and values are described below.
 | `name`    | relative path to the provisioning file from `grafana_provisioning_dir` | Yes        |
 | `state`   | either `present` or `absent`                                           | No         |
 | `content` | the content of the provisioning file                                   | No         |
+| `format`  | `yaml` is the only supported value at the moment. When the value is `yaml`, the value of `content` is parsed as YAML. Otherwise, the `content` is rendered as-is | No |
 
 An example:
 
@@ -114,7 +115,7 @@ None
         state: absent
     flags:
       FreeBSD: |
-        grafana_conf="{{ grafana_conf_file }}"
+        grafana_conf={{ grafana_conf_file }}
 
     grafana_flags: "{{ flags[ansible_os_family] }}"
     grafana_admin_user: admin
@@ -123,7 +124,8 @@ None
     grafana_provisioning_files:
       - name: datasources/influxdb.yml
         state: present
-        content: |
+        format: yaml
+        content:
           apiVersion: 1
           datasources:
             - name: InfluxDB
@@ -135,6 +137,25 @@ None
               url: http://localhost:8086
               jsonData:
                 httpMode: GET
+      - name: provisioning/dashboards/default.yml
+        state: present
+        # raw text
+        content: |
+          # Managed by ansible
+          apiVersion: 1
+          providers:
+            - name: a unique provider name
+              orgId: 1
+              folder: Test folder
+              type: file
+              disableDeletion: false
+              editable: true
+              updateIntervalSeconds: 10
+              options:
+                path: {{ grafana_provisioning_dir }}/dashboards/json
+      - name: provisioning/dashboards/json/empty.js
+        content: |
+          {}
     grafana_config: |
       [paths]
       data = {{ grafana_db_dir }}
