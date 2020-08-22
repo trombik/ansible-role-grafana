@@ -18,7 +18,7 @@
     validate: sh -n %s
   notify: Restart grafana
 
-- name: Start grafana
+- name: Enable grafana
   service:
     name: "{{ grafana_service }}"
     enabled: yes
