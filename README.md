@@ -87,6 +87,18 @@ grafana_provisioning_files:
 | `__grafana_conf_dir` | `/usr/local/etc` |
 | `__grafana_package` | `www/grafana5` |
 
+## OpenBSD
+
+| Variable | Default |
+|----------|---------|
+| `__grafana_user` | `_grafana` |
+| `__grafana_group` | `_grafana` |
+| `__grafana_log_dir` | `/var/log/grafana` |
+| `__grafana_db_dir` | `/var/grafana` |
+| `__grafana_service` | `grafana` |
+| `__grafana_conf_dir` | `/etc/grafana` |
+| `__grafana_package` | `grafana` |
+
 # Dependencies
 
 None
@@ -94,7 +106,6 @@ None
 # Example Playbook
 
 ```yaml
----
 - hosts: localhost
   roles:
     - name: trombik.apt_repo
@@ -113,11 +124,13 @@ None
         state: present
       - name: grafana-clock-panel
         state: absent
-    flags:
+    os_grafana_flags:
       FreeBSD: |
         grafana_conf={{ grafana_conf_file }}
+      OpenBSD: ""
+      Debian: ""
 
-    grafana_flags: "{{ flags[ansible_os_family] }}"
+    grafana_flags: "{{ os_grafana_flags[ansible_os_family] }}"
     grafana_admin_user: admin
     grafana_admin_password: PassWord
     grafana_addr: "{{ ansible_default_ipv4['address'] }}"
