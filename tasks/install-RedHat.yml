@@ -1,0 +1,17 @@
+---
+
+- name: Install grafana
+  yum:
+    name: "{{ grafana_package }}"
+    state: present
+
+- name: Install grafana_extra_packages
+  yum:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default(omit) }}"
+  with_items: "{{ grafana_extra_packages }}"
+
+- name: Enable grafana
+  service:
+    name: "{{ grafana_service }}"
+    enabled: yes

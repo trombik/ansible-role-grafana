@@ -16,6 +16,9 @@ galaxy_info:
     - name: Ubuntu
       version:
         - bionic
+    - name: EL
+      version:
+        - 7
 
   galaxy_tags:
     - grafana
