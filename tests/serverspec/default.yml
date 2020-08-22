@@ -1,15 +1,25 @@
 ---
 - hosts: localhost
   roles:
+    - name: trombik.redhat_repo
+      when:
+        - ansible_os_family == 'RedHat'
     - name: trombik.apt_repo
       when: ansible_os_family == 'Debian'
-    - ansible-role-grafana
+    - name: ansible-role-grafana
   vars:
     apt_repo_keys_to_add:
       - https://packages.grafana.com/gpg.key
     apt_repo_enable_apt_transport_https: yes
     apt_repo_to_add:
       - "deb https://packages.grafana.com/oss/deb stable main"
+    redhat_repo:
+      grafana:
+        baseurl: https://packages.grafana.com/oss/rpm
+        gpgkey: https://packages.grafana.com/gpg.key
+        gpgcheck: yes
+        enabled: yes
+
     grafana_extra_packages:
       - name: zsh
     grafana_plugins:

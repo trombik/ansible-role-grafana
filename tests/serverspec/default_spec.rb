@@ -99,7 +99,12 @@ describe file "#{log_dir}/grafana.log" do
   it { should be_grouped_into group }
   it do
     pending "cannot find where the file mode is defined" if os[:family] == "freebsd"
-    should be_mode os[:family] == "openbsd" ? 644 : 640
+    case os[:family]
+    when "openbsd", "redhat"
+      should be_mode 644
+    else
+      should be_mode 640
+    end
   end
   its(:content) { should match(/msg="HTTP Server Listen"/) }
 end

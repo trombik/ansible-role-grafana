@@ -1,0 +1,8 @@
+---
+__grafana_user: grafana
+__grafana_group: grafana
+__grafana_log_dir: /var/log/grafana
+__grafana_db_dir: /var/lib/grafana
+__grafana_service: grafana-server
+__grafana_conf_dir: /etc/grafana
+__grafana_package: grafana
