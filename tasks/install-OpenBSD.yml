@@ -1,12 +1,12 @@
 ---
 
 - name: Install grafana
-  apt:
+  openbsd_pkg:
     name: "{{ grafana_package }}"
     state: present
 
 - name: Install grafana_extra_packages
-  apt:
+  openbsd_pkg:
     name: "{{ item.name }}"
     state: "{{ item.state | default(omit) }}"
   with_items: "{{ grafana_extra_packages }}"
@@ -15,3 +15,4 @@
   service:
     name: "{{ grafana_service }}"
     enabled: yes
+    arguments: "{{ grafana_flags }}"

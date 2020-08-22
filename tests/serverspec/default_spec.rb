@@ -29,6 +29,13 @@ when "freebsd"
   config_dir = "/usr/local/etc"
   db_dir = "/var/db/grafana"
   default_group = "wheel"
+when "openbsd"
+  service = "grafana"
+  package = "grafana"
+  db_dir = "/var/grafana"
+  default_group = "wheel"
+  user = "_grafana"
+  group = user
 end
 config = "#{config_dir}/grafana.ini"
 provisioning_dir = "#{config_dir}/provisioning"
@@ -92,7 +99,7 @@ describe file "#{log_dir}/grafana.log" do
   it { should be_grouped_into group }
   it do
     pending "cannot find where the file mode is defined" if os[:family] == "freebsd"
-    should be_mode 640
+    should be_mode os[:family] == "openbsd" ? 644 : 640
   end
   its(:content) { should match(/msg="HTTP Server Listen"/) }
 end
@@ -119,7 +126,7 @@ plugins.each do |p|
     it { should be_directory }
     it { should be_mode 755 }
     it { should be_owned_by default_user }
-    it { should be_grouped_into os[:family] == "freebsd" ? group : default_group }
+    it { should be_grouped_into os[:family] =~ /bsd/ ? group : default_group }
   end
 end
 

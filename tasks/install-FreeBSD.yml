@@ -17,3 +17,8 @@
     dest: "/etc/rc.conf.d/{{ grafana_service }}"
     validate: sh -n %s
   notify: Restart grafana
+
+- name: Start grafana
+  service:
+    name: "{{ grafana_service }}"
+    enabled: yes
