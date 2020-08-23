@@ -1,3 +1,7 @@
+## Release 1.1.3
+
+* 54ce6ec bugfix: adjust filename of .ini file
+
 ## Release 1.1.2
 
 * 37b674f bugfix: update FreeBSD box
