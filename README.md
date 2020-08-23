@@ -17,7 +17,8 @@ None
 | `grafana_plugins_dir` | path to plug-in directory | `{{ grafana_db_dir }}/plugins` |
 | `grafana_service` | service name of `grafana` | `{{ __grafana_service }}` |
 | `grafana_conf_dir` | path to configuration directory | `{{ __grafana_conf_dir }}` |
-| `grafana_conf_file` | path to configuration file | `{{ grafana_conf_dir }}/grafana.ini` |
+| `grafana_conf_filename` | file name of configuration file | `{{ __grafana_conf_filename }}` |
+| `grafana_conf_file` | path to configuration file | `{{ grafana_conf_dir }}/{{ grafana_conf_filename }}` |
 | `grafana_provisioning_dir` | path to provisioning directory | `{{ grafana_conf_dir }}/provisioning` |
 | `grafana_package` | package name of `grafana` | `{{ __grafana_package }}` |
 | `grafana_extra_packages` | extra packages to install | `[]` |
@@ -73,6 +74,7 @@ grafana_provisioning_files:
 | `__grafana_db_dir` | `/var/lib/grafana` |
 | `__grafana_service` | `grafana-server` |
 | `__grafana_conf_dir` | `/etc/grafana` |
+| `__grafana_conf_filename` | `grafana.ini` |
 | `__grafana_package` | `grafana` |
 
 ## FreeBSD
@@ -85,7 +87,8 @@ grafana_provisioning_files:
 | `__grafana_db_dir` | `/var/db/grafana` |
 | `__grafana_service` | `grafana` |
 | `__grafana_conf_dir` | `/usr/local/etc` |
-| `__grafana_package` | `www/grafana5` |
+| `__grafana_conf_filename` | `grafana.ini` |
+| `__grafana_package` | `www/grafana6` |
 
 ## OpenBSD
 
@@ -97,6 +100,20 @@ grafana_provisioning_files:
 | `__grafana_db_dir` | `/var/grafana` |
 | `__grafana_service` | `grafana` |
 | `__grafana_conf_dir` | `/etc/grafana` |
+| `__grafana_conf_filename` | `config.ini` |
+| `__grafana_package` | `grafana` |
+
+## RedHat
+
+| Variable | Default |
+|----------|---------|
+| `__grafana_user` | `grafana` |
+| `__grafana_group` | `grafana` |
+| `__grafana_log_dir` | `/var/log/grafana` |
+| `__grafana_db_dir` | `/var/lib/grafana` |
+| `__grafana_service` | `grafana-server` |
+| `__grafana_conf_dir` | `/etc/grafana` |
+| `__grafana_conf_filename` | `grafana.ini` |
 | `__grafana_package` | `grafana` |
 
 # Dependencies
@@ -108,15 +125,25 @@ None
 ```yaml
 - hosts: localhost
   roles:
+    - name: trombik.redhat_repo
+      when:
+        - ansible_os_family == 'RedHat'
     - name: trombik.apt_repo
       when: ansible_os_family == 'Debian'
-    - ansible-role-grafana
+    - name: ansible-role-grafana
   vars:
     apt_repo_keys_to_add:
       - https://packages.grafana.com/gpg.key
     apt_repo_enable_apt_transport_https: yes
     apt_repo_to_add:
       - "deb https://packages.grafana.com/oss/deb stable main"
+    redhat_repo:
+      grafana:
+        baseurl: https://packages.grafana.com/oss/rpm
+        gpgkey: https://packages.grafana.com/gpg.key
+        gpgcheck: yes
+        enabled: yes
+
     grafana_extra_packages:
       - name: zsh
     grafana_plugins:

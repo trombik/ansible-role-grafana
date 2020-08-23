@@ -37,7 +37,12 @@ when "openbsd"
   user = "_grafana"
   group = user
 end
-config = "#{config_dir}/grafana.ini"
+config = case os[:family]
+         when "openbsd"
+           "#{config_dir}/config.ini"
+         else
+           "#{config_dir}/grafana.ini"
+         end
 provisioning_dir = "#{config_dir}/provisioning"
 plugins_dir = "#{db_dir}/plugins"
 

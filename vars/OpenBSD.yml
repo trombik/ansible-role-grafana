@@ -5,4 +5,5 @@ __grafana_log_dir: /var/log/grafana
 __grafana_db_dir: /var/grafana
 __grafana_service: grafana
 __grafana_conf_dir: /etc/grafana
+__grafana_conf_filename: "config.ini"
 __grafana_package: grafana
