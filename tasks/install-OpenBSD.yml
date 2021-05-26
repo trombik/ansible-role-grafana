@@ -11,7 +11,7 @@
     state: "{{ item.state | default(omit) }}"
   with_items: "{{ grafana_extra_packages }}"
 
-- name: Eanble grafana
+- name: Enable grafana
   service:
     name: "{{ grafana_service }}"
     enabled: yes
