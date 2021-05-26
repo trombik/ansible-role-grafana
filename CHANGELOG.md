@@ -1,3 +1,7 @@
+## Release 1.1.4
+
+* c157829 bugfix: QA and bump box versions
+
 ## Release 1.1.3
 
 * 54ce6ec bugfix: adjust filename of .ini file
