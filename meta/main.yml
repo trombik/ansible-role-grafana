@@ -18,6 +18,7 @@ galaxy_info:
     - name: Ubuntu
       version:
         - bionic
+        - focal
     - name: EL
       version:
         - 7
