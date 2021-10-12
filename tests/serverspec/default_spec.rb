@@ -105,7 +105,7 @@ describe file "#{log_dir}/grafana.log" do
   it do
     pending "cannot find where the file mode is defined" if os[:family] == "freebsd"
     case os[:family]
-    when "openbsd", "redhat"
+    when "openbsd"
       should be_mode 644
     else
       should be_mode 640
