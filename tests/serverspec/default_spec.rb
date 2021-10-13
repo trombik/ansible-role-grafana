@@ -25,8 +25,8 @@ provisioning_files = [
 case os[:family]
 when "freebsd"
   service = "grafana"
-  package = "www/grafana6"
-  config_dir = "/usr/local/etc"
+  package = "www/grafana8"
+  config_dir = "/usr/local/etc/grafana"
   db_dir = "/var/db/grafana"
   default_group = "wheel"
 when "openbsd"
