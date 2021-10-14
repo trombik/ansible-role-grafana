@@ -6,19 +6,11 @@
         - ansible_os_family == 'RedHat'
     - name: trombik.apt_repo
       when: ansible_os_family == 'Debian'
+    - name: trombik.telegraf
+    - name: trombik.influxdb
+    - name: trombik.nginx
     - name: ansible-role-grafana
   vars:
-    apt_repo_keys_to_add:
-      - https://packages.grafana.com/gpg.key
-    apt_repo_enable_apt_transport_https: yes
-    apt_repo_to_add:
-      - "deb https://packages.grafana.com/oss/deb stable main"
-    redhat_repo:
-      grafana:
-        baseurl: https://packages.grafana.com/oss/rpm
-        gpgkey: https://packages.grafana.com/gpg.key
-        gpgcheck: yes
-        enabled: yes
 
     grafana_extra_packages:
       - name: zsh
@@ -35,7 +27,7 @@
 
     grafana_flags: "{{ os_grafana_flags[ansible_os_family] }}"
     grafana_admin_user: admin
-    grafana_admin_password: PassWord
+    grafana_admin_password: password
     grafana_addr: "{{ ansible_default_ipv4['address'] }}"
     grafana_provisioning_files:
       - name: datasources/influxdb.yml
@@ -53,7 +45,9 @@
               url: http://localhost:8086
               jsonData:
                 httpMode: GET
-      - name: provisioning/dashboards/default.yml
+
+      - name: dashboards/default.yml
+        # an example to provision dashboards with grafana_provisioning_files
         state: present
         # raw text
         content: |
@@ -64,14 +58,22 @@
               orgId: 1
               folder: Test folder
               type: file
-              disableDeletion: false
+              disableDeletion: true
               editable: true
               updateIntervalSeconds: 10
               options:
                 path: {{ grafana_provisioning_dir }}/dashboards/json
-      - name: provisioning/dashboards/json/empty.js
-        content: |
-          {}
+      - name: dashboards/json/example.json
+        # XXX when looking up a json file, the return value is escaped so that
+        # the value is valid YAML string. you need `from_json | to_nice_json`
+        # to make it valid JSON. also, the indent of JSON files created by
+        # grafana is two, and, by default, indent of to_nice_json is four. to
+        # make the original JSON file and the file on the destination
+        # _similar_, you need `indent = 2`. you need `ensure_ascii = False` as
+        # to_nice_json converts all strings in the input into ASCII by
+        # default.
+        content: "{{ lookup('file', 'example.json') | from_json | to_nice_json(indent = 2, ensure_ascii = False) }}"
+        state: present
     grafana_config: |
       [paths]
       data = {{ grafana_db_dir }}
@@ -117,3 +119,178 @@
       [external_image_storage.gcs]
       [external_image_storage.azure_blob]
       [external_image_storage.local]
+
+    # _____________________________________________apt
+    apt_repo_keys_to_add:
+      - https://packages.grafana.com/gpg.key
+      - https://repos.influxdata.com/influxdb.key
+    apt_repo_enable_apt_transport_https: yes
+    redhat_repo:
+      grafana:
+        baseurl: https://packages.grafana.com/oss/rpm
+        gpgkey: https://packages.grafana.com/gpg.key
+        gpgcheck: yes
+        enabled: yes
+    apt_repo_to_add:
+      - "deb https://repos.influxdata.com/debian {% if ansible_distribution == 'Devuan' %}{{ apt_repo_codename_devuan_to_debian[ansible_distribution_release] }}{% else %}{{ ansible_distribution_release }}{% endif %} stable"
+      - "deb https://packages.grafana.com/oss/deb stable main"
+    apt_repo_enable_apt_transport_https: yes
+
+    # _____________________________________________influxdb
+    influxdb_admin_username: admin
+    influxdb_admin_password: password
+    influxdb_bind_address: 127.0.0.1:8086
+    influxdb_databases:
+      - database_name: mydatabase
+        state: present
+    influxdb_users:
+      - user_name: read
+        user_password: read
+        grants:
+          - database: mydatabase
+            privilege: READ
+      - user_name: write
+        user_password: write
+        grants:
+          - database: mydatabase
+            privilege: WRITE
+    influxdb_sysvinit_default: |
+      STDOUT={{ influxdb_log_dir }}/influxd.log
+    influxdb_config: |
+      reporting-disabled = true
+      # this one is bind address for backup process
+      bind-address = "127.0.0.1:8088"
+      [meta]
+        dir = "{{ influxdb_db_dir }}/meta"
+      [data]
+        dir = "{{ influxdb_db_dir }}/data"
+        wal-dir = "{{ influxdb_db_dir }}/wal"
+      [coordinator]
+      [retention]
+      [shard-precreation]
+      [monitor]
+      [http]
+        auth-enabled = true
+        bind-address = "{{ influxdb_bind_address }}"
+        https-enabled = false
+        access-log-path = "{{ influxdb_log_dir }}/access.log"
+      [ifql]
+      [logging]
+      [subscriber]
+      [[graphite]]
+      [[collectd]]
+      [[opentsdb]]
+      [[udp]]
+      [tls]
+    # _____________________________________________telegraf
+    os_telegraf_packages:
+      FreeBSD:
+        - net-mgmt/net-snmp
+      OpenBSD:
+        - net-snmp
+      Debian:
+        - snmp
+    telegraf_extra_packages: "{{ os_telegraf_packages[ansible_os_family] }}"
+    telegraf_config: |
+      [global_tags]
+      os_family = "{{ ansible_os_family }}"
+      [agent]
+        interval = "10s"
+        round_interval = true
+        metric_batch_size = 1000
+        metric_buffer_limit = 10000
+        collection_jitter = "0s"
+        flush_interval = "10s"
+        flush_jitter = "0s"
+        precision = ""
+        debug = false
+        quiet = false
+        {% if ansible_os_family != "FreeBSD" %}
+        logfile = "{{ telegraf_log_dir }}/telegraf.log"
+        {% endif %}
+        hostname = "{{ ansible_hostname }}"
+        omit_hostname = false
+      {% if ansible_os_family != "OpenBSD" %}
+      [[inputs.cpu]]
+        percpu = true
+        totalcpu = true
+        collect_cpu_time = false
+        report_active = false
+      {% endif %}
+      [[inputs.disk]]
+        ignore_fs = ["tmpfs", "devtmpfs", "devfs", "overlay", "aufs", "squashfs"]
+      [[inputs.diskio]]
+      {% if ansible_os_family != "OpenBSD" %}
+      [[inputs.kernel]]
+      {% endif %}
+      [[inputs.mem]]
+      [[inputs.processes]]
+      [[inputs.socket_listener]]
+        service_address = "tcp://127.0.0.1:8094"
+        data_format = "influx"
+
+      [[inputs.swap]]
+      # does not work on OpenBSD
+      [[inputs.system]]
+      [[outputs.influxdb]]
+        urls = ["http://{{ influxdb_bind_address }}"]
+        database = "mydatabase"
+        username = "write"
+        password = "write"
+        skip_database_creation = true
+      [[inputs.netstat]]
+      [[inputs.net]]
+      [[inputs.temp]]
+    # _____________________________________________nginx
+    os_project_www_root_dir:
+      OpenBSD: /var/www/htdocs
+      FreeBSD: /usr/local/www/nginx
+      Debian: /var/www/html
+      RedHat: /usr/share/nginx/html
+    project_www_root_dir: "{{ os_project_www_root_dir[ansible_os_family] }}"
+
+    nginx_config: |
+      user {{ nginx_user }};
+      worker_processes 1;
+      error_log {{ nginx_error_log_file }};
+      events {
+        worker_connections 1024;
+      }
+      http {
+        include {{ nginx_conf_dir }}/mime.types;
+        access_log {{ nginx_access_log_file }};
+        default_type application/octet-stream;
+        sendfile on;
+        keepalive_timeout 65;
+        gzip on;
+        gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript text/x-js;
+
+        upstream influxdb {
+          server {{ influxdb_bind_address }};
+          keepalive 10;
+        }
+
+        upstream grafana {
+          server localhost:3000;
+          keepalive 10;
+        }
+
+        server {
+          listen *:80;
+          server_name localhost;
+          root {{ project_www_root_dir }};
+          location / {
+            proxy_pass http://grafana/;
+            proxy_redirect default;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_connect_timeout 5;
+            proxy_send_timeout 10;
+            proxy_read_timeout 20;
+          }
+          error_page 500 502 503 504 /50x.html;
+          location = /50x.html {
+          }
+        }
+      }

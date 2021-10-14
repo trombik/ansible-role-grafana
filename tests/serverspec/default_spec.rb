@@ -17,9 +17,9 @@ plugins_absent = %w[grafana-clock-panel]
 provisioning_files = [
   { name: "datasources/influxdb.yml", regex: /datasources:\n-\s+access: proxy/ },
   { name: "datasources/influxdb.yml", regex: /Managed by ansible/ },
-  { name: "provisioning/dashboards/default.yml", regex: /Managed by ansible/ },
-  { name: "provisioning/dashboards/default.yml", regex: /name: a unique provider name/ },
-  { name: "provisioning/dashboards/json/empty.js", regex: /{}/ }
+  { name: "dashboards/default.yml", regex: /Managed by ansible/ },
+  { name: "dashboards/default.yml", regex: /name: a unique provider name/ },
+  { name: "dashboards/json/example.json", regex: /"uid":\s+"LCKDHqDnz"/ }
 ]
 
 case os[:family]
@@ -67,14 +67,16 @@ describe file(config) do
 end
 
 provisioning_files.each do |f|
+  # directory
   describe file(File.dirname("#{provisioning_dir}/#{f[:name]}")) do
     it { should exist }
     it { should be_directory }
     it { should be_mode 755 }
-    it { should be_owned_by default_user }
+    it { should be_owned_by user }
     it { should be_grouped_into group }
   end
 
+  # file
   describe file("#{provisioning_dir}/#{f[:name]}") do
     it { should exist }
     it { should be_file }
@@ -100,17 +102,8 @@ end
 describe file "#{log_dir}/grafana.log" do
   it { should exist }
   it { should be_file }
-  it { should be_owned_by user }
-  it { should be_grouped_into group }
-  it do
-    pending "cannot find where the file mode is defined" if os[:family] == "freebsd"
-    case os[:family]
-    when "openbsd"
-      should be_mode 644
-    else
-      should be_mode 640
-    end
-  end
+  # XXX do not test permission. we do not change the permission in the role.
+  # different platforms use different permission, and they changes one day.
   its(:content) { should match(/msg="HTTP Server Listen"/) }
 end
 

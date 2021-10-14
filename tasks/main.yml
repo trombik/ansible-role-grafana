@@ -54,6 +54,7 @@
     path: "{{ grafana_provisioning_dir }}/{{ item.name | dirname }}"
     mode: 0755
     state: directory
+    owner: "{{ grafana_user }}"
     group: "{{ grafana_group }}"
   with_items: "{{ grafana_provisioning_files }}"
   when:
