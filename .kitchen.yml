@@ -59,6 +59,11 @@ platforms:
       network:
         - ["forwarded_port", {guest: 80, host: 8002}]
 
+  - name: centos-7.8-x86_64
+    driver:
+      box: trombik/ansible-centos-7.8-x86_64
+      box_check_update: false
+
 suites:
   - name: default
     provisioner:
@@ -67,3 +72,15 @@ suites:
     verifier:
       name: shell
       command: rspec -c -f d -I tests/serverspec tests/serverspec/default_spec.rb
+    excludes:
+      - centos-7.8-x86_64
+
+  - name: simple
+    provisioner:
+      name: ansible_playbook
+      playbook: tests/serverspec/simple.yml
+    verifier:
+      name: shell
+      command: rspec -c -f d -I tests/serverspec tests/serverspec/simple_spec.rb
+    includes:
+      - centos-7.8-x86_64
