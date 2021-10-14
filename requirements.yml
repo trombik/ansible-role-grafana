@@ -1,4 +1,9 @@
 ---
-
-- name: trombik.apt_repo
-- name: trombik.redhat_repo
+roles:
+  - name: trombik.apt_repo
+  - name: trombik.redhat_repo
+  - name: trombik.influxdb
+  - name: trombik.telegraf
+  - name: trombik.nginx
+collections:
+  - name: community.general
