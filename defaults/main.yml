@@ -17,3 +17,4 @@ grafana_admin_user: ""
 grafana_admin_password: ""
 grafana_config: ""
 grafana_provisioning_files: []
+grafana_provisioning_copy_files: []

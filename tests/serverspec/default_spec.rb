@@ -1,5 +1,6 @@
 require "spec_helper"
 require "serverspec"
+require "grafana"
 
 package = "grafana"
 service = "grafana-server"
@@ -21,6 +22,19 @@ provisioning_files = [
   { name: "dashboards/default.yml", regex: /name: a unique provider name/ },
   { name: "dashboards/json/example.json", regex: /"uid":\s+"LCKDHqDnz"/ }
 ]
+provisioning_copy_files = [
+  { name: "dashboards/copy/Linux/linux.json", regex: /"uid":\s+/ }
+]
+api_port = case os[:family]
+           when "freebsd"
+             8000
+           when "openbsd"
+             8001
+           when "ubuntu"
+             8002
+           when "redhat"
+             8003
+           end
 
 case os[:family]
 when "freebsd"
@@ -45,6 +59,9 @@ config = case os[:family]
          end
 provisioning_dir = "#{config_dir}/provisioning"
 plugins_dir = "#{db_dir}/plugins"
+api_host = "localhost"
+api_user = "admin"
+api_password = "password"
 
 describe package(package) do
   it { should be_installed }
@@ -83,6 +100,14 @@ provisioning_files.each do |f|
     it { should be_owned_by default_user }
     it { should be_grouped_into group }
     it { should be_mode 640 }
+    its(:content) { should match(f[:regex]) }
+  end
+end
+
+provisioning_copy_files.each do |f|
+  describe file("#{provisioning_dir}/#{f[:name]}") do
+    it { should exist }
+    it { should be_file }
     its(:content) { should match(f[:regex]) }
   end
 end
@@ -177,5 +202,41 @@ end
 ports.each do |p|
   describe port(p) do
     it { should be_listening }
+  end
+end
+
+describe "API" do
+  before do
+    config = {
+      grafana: {
+        host: api_host,
+        port: api_port
+      }
+    }
+    @g = Grafana::Client.new(config)
+    @g.login(username: api_user, password: api_password)
+  end
+
+  it "returns dashboard `FreeBSD` in `Test folder`" do
+    search = { query: "FreeBSD" }
+    res = @g.search_dashboards(search)
+    status  = res.dig("status")
+    # {"message"=>[{"folderId"=>2, "folderTitle"=>"Test folder", "folderUid"=>"ielL5kOnz", "folderUrl"=>"/d...>"dash-db", "uid"=>"LCKDHqDnz", "uri"=>"db/freebsd", "url"=>"/d/LCKDHqDnz/freebsd"}], "status"=>200}
+    message = res.dig("message")
+    folder_title = message.first.dig("folderTitle")
+
+    expect(status).to be == 200
+    expect(folder_title).to eq "Test folder"
+  end
+
+  it "returns dashboard `System` in `Linux`" do
+    search = { query: "System" }
+    res = @g.search_dashboards(search)
+    status  = res.dig("status")
+    message = res.dig("message")
+    folder_title = message.first.dig("folderTitle")
+
+    expect(status).to be == 200
+    expect(folder_title).to eq "Linux"
   end
 end
