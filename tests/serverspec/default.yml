@@ -63,6 +63,25 @@
               updateIntervalSeconds: 10
               options:
                 path: {{ grafana_provisioning_dir }}/dashboards/json
+
+      - name: dashboards/copy.yml
+        # an example to provision dashboards with grafana_provisioning_copy_files
+        state: present
+        # raw text
+        content: |
+          # Managed by ansible
+          apiVersion: 1
+          providers:
+            - name: copy
+              orgId: 1
+              type: file
+              folder: ""
+              disableDeletion: true
+              editable: true
+              updateIntervalSeconds: 10
+              options:
+                path: {{ grafana_provisioning_dir }}/dashboards/copy
+                foldersFromFilesStructure: true
       - name: dashboards/json/example.json
         # XXX when looking up a json file, the return value is escaped so that
         # the value is valid YAML string. you need `from_json | to_nice_json`
@@ -74,6 +93,11 @@
         # default.
         content: "{{ lookup('file', 'example.json') | from_json | to_nice_json(indent = 2, ensure_ascii = False) }}"
         state: present
+    grafana_provisioning_copy_files:
+      - dest: "{{ grafana_provisioning_dir }}/dashboards/"
+        src: copy
+        state: present
+
     grafana_config: |
       [paths]
       data = {{ grafana_db_dir }}

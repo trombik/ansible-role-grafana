@@ -1,5 +1,7 @@
 source "https://rubygems.org"
 
+gem "grafana"
+
 # collection support
 gem "kitchen-ansible", ">= 0.56.0"
 gem "kitchen-sync", "~> 2.1.1", git: "https://github.com/trombik/kitchen-sync.git", branch: "without_full_path_to_rsync"
