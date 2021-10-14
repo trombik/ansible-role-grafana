@@ -158,7 +158,6 @@
     apt_repo_to_add:
       - "deb https://repos.influxdata.com/debian {% if ansible_distribution == 'Devuan' %}{{ apt_repo_codename_devuan_to_debian[ansible_distribution_release] }}{% else %}{{ ansible_distribution_release }}{% endif %} stable"
       - "deb https://packages.grafana.com/oss/deb stable main"
-    apt_repo_enable_apt_transport_https: yes
 
     # _____________________________________________influxdb
     influxdb_admin_username: admin
