@@ -28,6 +28,7 @@ None
 | `grafana_admin_password` | administration user's password | `""` |
 | `grafana_config` | content of `grafana.ini` | `""` |
 | `grafana_provisioning_files` | see below | `[]` |
+| `grafana_provisioning_copy_files` | see below | `[]` |
 
 ## `grafana_provisioning_files`
 
@@ -63,6 +64,18 @@ grafana_provisioning_files:
   - name: datasources/foo.yml
     state: absent
 ```
+
+## `grafana_provisioning_copy_files`
+
+This variable is a list of dict. The dict accepts all keys that
+`ansible.builtin.copy` accepts.
+
+In addition, it needs `state` as a key in the dict. `state` must be either
+`present` or `absent`. When `present`, the role passes the dict to
+`ansible.builtin.copy`. When `absent`, the file or the directory is removed.
+
+The variable is useful when you want to provision dashboards from multiple
+files. See the example.
 
 ## Debian
 
