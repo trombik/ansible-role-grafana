@@ -1,3 +1,15 @@
+## Release 1.2.0
+
+* 93aec67 doc: update default example
+* b5b30d4 doc: document grafana_provisioning_copy_files
+* 9686c9a bugfix: run `simple` test on CentOS
+* cff20ad bufix: dup of apt_repo_enable_apt_transport_https
+* 453c4d8 imp: introduce grafana_provisioning_copy_files
+* b6ba0ea bugfix: add more practical example
+* 9e897c6 bugfix: update grafana to grafana8 on FreeBSD
+* ab0ddec bugfix: fix test failure on CentOS
+* 79047e1 bugfix: update gems, box version
+
 ## Release 1.1.5
 
 * 9ebbd76 bugfix: support Ubuntu 20.04
