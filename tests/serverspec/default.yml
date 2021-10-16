@@ -259,7 +259,6 @@
         data_format = "influx"
 
       [[inputs.swap]]
-      # does not work on OpenBSD
       [[inputs.system]]
         fielddrop = ["uptime_format"]
       [[outputs.influxdb]]
@@ -273,7 +272,7 @@
       # requires lsof
       {% endif %}
       [[inputs.net]]
-      {% if ansible_os_family != 'FreeBSD' %}
+      {% if ansible_os_family != 'FreeBSD' and ansible_os_family != 'OpenBSD' %}
       [[inputs.temp]]
       {% endif %}
       {% if ansible_os_family != 'OpenBSD' %}
