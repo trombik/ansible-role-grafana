@@ -18,7 +18,7 @@ extra_packages = case os[:family]
                  when "openbsd"
                    %w[net-snmp]
                  when "debian"
-                    %w[snmp lsof]
+                   %w[snmp lsof]
                  when "redhat"
                    %w[snmp lsof]
                  end
