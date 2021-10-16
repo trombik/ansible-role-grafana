@@ -12,7 +12,16 @@ log_dir = "/var/log/grafana"
 db_dir  = "/var/lib/grafana"
 default_user = "root"
 default_group = "root"
-extra_packages = %w[zsh]
+extra_packages = case os[:family]
+                 when "freebsd"
+                   %w[net-snmp lsof]
+                 when "openbsd"
+                   %w[net-snmp]
+                 when "debian"
+                    %w[snmp lsof]
+                 when "redhat"
+                   %w[snmp lsof]
+                 end
 plugins = %w[raintank-worldping-app]
 plugins_absent = %w[grafana-clock-panel]
 provisioning_files = [
