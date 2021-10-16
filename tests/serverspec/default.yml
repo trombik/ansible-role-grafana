@@ -6,9 +6,9 @@
         - ansible_os_family == 'RedHat'
     - name: trombik.apt_repo
       when: ansible_os_family == 'Debian'
-    - name: trombik.telegraf
     - name: trombik.influxdb
     - name: trombik.nginx
+    - name: trombik.telegraf
     - name: ansible-role-grafana
   vars:
 
@@ -206,14 +206,19 @@
       [[udp]]
       [tls]
     # _____________________________________________telegraf
-    os_telegraf_packages:
+    os_telegraf_extra_packages:
       FreeBSD:
         - net-mgmt/net-snmp
+        - lsof
       OpenBSD:
         - net-snmp
       Debian:
         - snmp
-    telegraf_extra_packages: "{{ os_telegraf_packages[ansible_os_family] }}"
+        - lsof
+      RedHat:
+        - snmp
+        - lsof
+    telegraf_extra_packages: "{{ os_telegraf_extra_packages[ansible_os_family] }}"
     telegraf_config: |
       [global_tags]
       os_family = "{{ ansible_os_family }}"
@@ -243,8 +248,9 @@
       [[inputs.disk]]
         ignore_fs = ["tmpfs", "devtmpfs", "devfs", "overlay", "aufs", "squashfs"]
       [[inputs.diskio]]
-      {% if ansible_os_family != "OpenBSD" %}
+      {% if ansible_os_family != "OpenBSD" and ansible_os_family != 'FreeBSD' %}
       [[inputs.kernel]]
+      # requires /proc/stat
       {% endif %}
       [[inputs.mem]]
       [[inputs.processes]]
@@ -255,15 +261,34 @@
       [[inputs.swap]]
       # does not work on OpenBSD
       [[inputs.system]]
+        fielddrop = ["uptime_format"]
       [[outputs.influxdb]]
         urls = ["http://{{ influxdb_bind_address }}"]
         database = "mydatabase"
         username = "write"
         password = "write"
         skip_database_creation = true
+      {% if ansible_os_family != 'OpenBSD' %}
       [[inputs.netstat]]
+      # requires lsof
+      {% endif %}
       [[inputs.net]]
+      {% if ansible_os_family != 'FreeBSD' %}
       [[inputs.temp]]
+      {% endif %}
+      {% if ansible_os_family != 'OpenBSD' %}
+      [[inputs.internet_speed]]
+      # requires telegraf 1.20.x
+        interval = "10m"
+        enable_file_download = true
+      {% endif %}
+      [[inputs.net_response]]
+        protocol = "tcp"
+        address = "localhost:80"
+        fielddrop = ["result_type", "string_found"]
+      [[inputs.nginx]]
+        urls = ["http://localhost/server_status"]
+
     # _____________________________________________nginx
     os_project_www_root_dir:
       OpenBSD: /var/www/htdocs
@@ -311,6 +336,11 @@
             proxy_connect_timeout 5;
             proxy_send_timeout 10;
             proxy_read_timeout 20;
+          }
+          # ngx_http_stub_status_module
+          # http://nginx.org/en/docs/http/ngx_http_stub_status_module.html
+          location = /server_status {
+            stub_status;
           }
           error_page 500 502 503 504 /50x.html;
           location = /50x.html {
