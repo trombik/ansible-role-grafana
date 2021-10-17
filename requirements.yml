@@ -4,6 +4,6 @@ roles:
   - name: trombik.redhat_repo
   - name: trombik.influxdb
   - name: trombik.telegraf
-  - name: trombik.nginx
+  - name: trombik.haproxy
 collections:
   - name: community.general

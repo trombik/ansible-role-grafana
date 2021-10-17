@@ -7,7 +7,7 @@ service = "grafana-server"
 config_dir = "/etc/grafana"
 user    = "grafana"
 group   = "grafana"
-ports   = [3000]
+ports   = [3000, 1936]
 log_dir = "/var/log/grafana"
 db_dir  = "/var/lib/grafana"
 default_user = "root"
@@ -17,7 +17,7 @@ extra_packages = case os[:family]
                    %w[net-snmp lsof]
                  when "openbsd"
                    %w[net-snmp]
-                 when "debian"
+                 when "ubuntu"
                    %w[snmp lsof]
                  when "redhat"
                    %w[snmp lsof]
@@ -248,4 +248,9 @@ describe "API" do
     expect(status).to be == 200
     expect(folder_title).to eq "Linux"
   end
+end
+
+describe command "curl -s 'http://127.0.0.1:1936/haproxy?stats'" do
+  its(:exit_status) { should eq 0 }
+  its(:stdout) { should match(/Statistics Report for HAProxy/) }
 end
