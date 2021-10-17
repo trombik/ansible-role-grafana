@@ -144,9 +144,9 @@ None
         - ansible_os_family == 'RedHat'
     - name: trombik.apt_repo
       when: ansible_os_family == 'Debian'
-    - name: trombik.telegraf
     - name: trombik.influxdb
-    - name: trombik.nginx
+    - name: trombik.haproxy
+    - name: trombik.telegraf
     - name: ansible-role-grafana
   vars:
 
@@ -344,14 +344,19 @@ None
       [[udp]]
       [tls]
     # _____________________________________________telegraf
-    os_telegraf_packages:
+    os_telegraf_extra_packages:
       FreeBSD:
         - net-mgmt/net-snmp
+        - lsof
       OpenBSD:
         - net-snmp
       Debian:
         - snmp
-    telegraf_extra_packages: "{{ os_telegraf_packages[ansible_os_family] }}"
+        - lsof
+      RedHat:
+        - snmp
+        - lsof
+    telegraf_extra_packages: "{{ os_telegraf_extra_packages[ansible_os_family] }}"
     telegraf_config: |
       [global_tags]
       os_family = "{{ ansible_os_family }}"
@@ -381,8 +386,9 @@ None
       [[inputs.disk]]
         ignore_fs = ["tmpfs", "devtmpfs", "devfs", "overlay", "aufs", "squashfs"]
       [[inputs.diskio]]
-      {% if ansible_os_family != "OpenBSD" %}
+      {% if ansible_os_family != "OpenBSD" and ansible_os_family != 'FreeBSD' %}
       [[inputs.kernel]]
+      # requires /proc/stat
       {% endif %}
       [[inputs.mem]]
       [[inputs.processes]]
@@ -391,70 +397,118 @@ None
         data_format = "influx"
 
       [[inputs.swap]]
-      # does not work on OpenBSD
       [[inputs.system]]
+        fielddrop = ["uptime_format"]
       [[outputs.influxdb]]
         urls = ["http://{{ influxdb_bind_address }}"]
         database = "mydatabase"
         username = "write"
         password = "write"
         skip_database_creation = true
+      {% if ansible_os_family != 'OpenBSD' %}
       [[inputs.netstat]]
+      # requires lsof
+      {% endif %}
       [[inputs.net]]
+      {% if ansible_os_family != 'FreeBSD' and ansible_os_family != 'OpenBSD' %}
       [[inputs.temp]]
-    # _____________________________________________nginx
-    os_project_www_root_dir:
-      OpenBSD: /var/www/htdocs
-      FreeBSD: /usr/local/www/nginx
-      Debian: /var/www/html
-      RedHat: /usr/share/nginx/html
-    project_www_root_dir: "{{ os_project_www_root_dir[ansible_os_family] }}"
+      {% endif %}
+      {% if ansible_os_family != 'OpenBSD' %}
+      [[inputs.internet_speed]]
+      # requires telegraf 1.20.x
+        interval = "10m"
+        enable_file_download = true
+      {% endif %}
+      [[inputs.net_response]]
+        protocol = "tcp"
+        address = "localhost:80"
+        fielddrop = ["result_type", "string_found"]
+      [[inputs.haproxy]]
 
-    nginx_config: |
-      user {{ nginx_user }};
-      worker_processes 1;
-      error_log {{ nginx_error_log_file }};
-      events {
-        worker_connections 1024;
-      }
-      http {
-        include {{ nginx_conf_dir }}/mime.types;
-        access_log {{ nginx_access_log_file }};
-        default_type application/octet-stream;
-        sendfile on;
-        keepalive_timeout 65;
-        gzip on;
-        gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript text/x-js;
+    # _____________________________________________haproxy
+    project_backend_host: 127.0.0.1
+    project_backend_port: 3000
+    haproxy_config: |
+      global
+        daemon
+      {% if ansible_os_family == 'FreeBSD' %}
+      # FreeBSD package does not provide default
+        maxconn 4096
+        log /var/run/log local0 notice
+          user {{ haproxy_user }}
+          group {{ haproxy_group }}
+      {% elif ansible_os_family == 'Debian' %}
+        log /dev/log  local0
+        log /dev/log  local1 notice
+        chroot {{ haproxy_chroot_dir }}
+        stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+        stats timeout 30s
+        user {{ haproxy_user }}
+        group {{ haproxy_group }}
 
-        upstream influxdb {
-          server {{ influxdb_bind_address }};
-          keepalive 10;
-        }
+        # Default SSL material locations
+        ca-base /etc/ssl/certs
+        crt-base /etc/ssl/private
 
-        upstream grafana {
-          server localhost:3000;
-          keepalive 10;
-        }
+        # See: https://ssl-config.mozilla.org/#server=haproxy&server-version=2.0.3&config=intermediate
+          ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+          ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+          ssl-default-bind-options ssl-min-ver TLSv1.2 no-tls-tickets
+      {% elif ansible_os_family == 'OpenBSD' %}
+        log 127.0.0.1   local0 debug
+        maxconn 1024
+        chroot {{ haproxy_chroot_dir }}
+        uid 604
+        gid 604
+        pidfile /var/run/haproxy.pid
+      {% endif %}
 
-        server {
-          listen *:80;
-          server_name localhost;
-          root {{ project_www_root_dir }};
-          location / {
-            proxy_pass http://grafana/;
-            proxy_redirect default;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_connect_timeout 5;
-            proxy_send_timeout 10;
-            proxy_read_timeout 20;
-          }
-          error_page 500 502 503 504 /50x.html;
-          location = /50x.html {
-          }
-        }
-      }
+      defaults
+        log global
+        mode http
+        timeout connect 5s
+        timeout client 10s
+        timeout server 10s
+        option  httplog
+        option  dontlognull
+        retries 3
+        maxconn 2000
+      {% if ansible_os_family == 'Debian' %}
+        errorfile 400 /etc/haproxy/errors/400.http
+        errorfile 403 /etc/haproxy/errors/403.http
+        errorfile 408 /etc/haproxy/errors/408.http
+        errorfile 500 /etc/haproxy/errors/500.http
+        errorfile 502 /etc/haproxy/errors/502.http
+        errorfile 503 /etc/haproxy/errors/503.http
+        errorfile 504 /etc/haproxy/errors/504.http
+      {% elif ansible_os_family == 'OpenBSD' %}
+        option  redispatch
+      {% endif %}
+
+      frontend http-in
+        bind *:80
+        default_backend servers
+
+      # enable stats for grafana
+      # The default URI compiled in HAProxy is "/haproxy?stats"
+      listen stats
+        bind *:1936
+        stats enable
+        stats refresh 60s
+
+      backend servers
+        option forwardfor
+        server server1 {{ project_backend_host }}:{{ project_backend_port }} maxconn 32 check
+
+    os_haproxy_flags:
+      FreeBSD: |
+        haproxy_config="{{ haproxy_conf_file }}"
+        #haproxy_flags="-q -f ${haproxy_config} -p ${pidfile}"
+      Debian: |
+        #CONFIG="/etc/haproxy/haproxy.cfg"
+        #EXTRAOPTS="-de -m 16"
+      OpenBSD: ""
+    haproxy_flags: "{{ os_haproxy_flags[ansible_os_family] }}"
 ```
 
 # License
